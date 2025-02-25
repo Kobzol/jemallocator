@@ -275,10 +275,14 @@ fn main() {
 
     // Make:
     let make = make_cmd(&host);
-    run(Command::new(make)
-        .current_dir(&build_dir)
-        .arg("-j")
-        .arg(num_jobs.clone()));
+    let mut cmd = Command::new(make);
+    cmd.current_dir(&build_dir);
+    if std::env::var("JEMALLOC_JOBSERVER").is_ok() {
+        cmd.env("MAKEFLAGS", expect_env("CARGO_MAKEFLAGS"));
+    } else {
+        cmd.arg("-j").arg(num_jobs.clone());
+    }
+    run(&mut cmd);
 
     // Skip watching this environment variables to avoid rebuild in CI.
     if env::var("JEMALLOC_SYS_RUN_JEMALLOC_TESTS").is_ok() {
